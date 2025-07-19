@@ -11,31 +11,20 @@ Demo banking system implemented in Java using JDBC for database access and MySQL
 - Git & GitHub
 
 ## Project Structure
-
+```
 banking-system-demo/
-
 ├── src/
-
 │ ├── main/java/com/davidelatina/bankingdemo/
-
 │ │ ├── dao/
-
 │ │ ├── main/
-
 │ │ ├── model/
-
 │ │ └── util/
-
 ├── .env
-
 ├── banking_db_data.sql
-
 ├── banking_db_init.sql
-
 ├── pom.xml
-
 └── README.md
-
+```
 ## Prerequisites
 
 - Java 17 or higher
