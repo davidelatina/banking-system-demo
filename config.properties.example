@@ -1,0 +1,17 @@
+# banking-system-demo .properties file
+# Formatted as key = value
+# There is no need for double quotes ("") for strings
+# Whitespace at the beginning of a line and around = is ignored.
+
+# Example:
+# MY_STRING = myvar
+# MY_CONSTANT = 3.1415
+
+# URL for database connection
+URL = jdbc:mysql://localhost:3306/myscheme
+
+# Database username
+USER = user
+
+# Database user password
+PASSWORD = mypassword
