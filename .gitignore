@@ -6,7 +6,7 @@
 target/
 
 # Local configuration file(s)
-config.properties
+.env
 
 # Compiled class file
 *.class
