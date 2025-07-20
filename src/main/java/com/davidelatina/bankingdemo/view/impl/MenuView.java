@@ -100,7 +100,7 @@ public enum MenuView {
    * @return int userSelection
    * @throws RuntimeException for Scanner exceptions
    */
-  public int menuAnyInt(Menu menu) throws RuntimeException {
+  public int menuIntAny(Menu menu) throws RuntimeException {
 
     // Size of menu options array
     int size = menu.option().length;
@@ -149,7 +149,12 @@ public enum MenuView {
   }
 
   public int userSelectedInt(String prompt, String errMessage) {
-    return this.menuAnyInt(new Menu("", new String[]{}, prompt, errMessage));
+    return this.menuIntAny(new Menu("", new String[]{}, prompt, errMessage));
+  }
+
+  public String userSelectedStringAny(String prompt) {
+    System.out.print(prompt + ": ");
+    return scanStr.nextLine();
   }
 
   public void displayMessage(String message) {

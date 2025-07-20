@@ -4,15 +4,14 @@ import java.math.BigInteger;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
-import com.davidelatina.bankingdemo.dao.CustomerDAO;
 import com.davidelatina.bankingdemo.model.entity.Customer;
+import com.davidelatina.bankingdemo.model.service.CustomerService;
 import com.davidelatina.bankingdemo.view.dto.Menu;
 import com.davidelatina.bankingdemo.view.impl.MenuView;
 
-
-
 /**
- * The {@code BankController} class acts as central orchestrator for the application,
+ * The {@code BankController} class acts as central orchestrator for the
+ * application,
  * adhering to the Controller role in the Model-View-Controller (MVC)
  * design pattern.
  *
@@ -21,6 +20,17 @@ import com.davidelatina.bankingdemo.view.impl.MenuView;
  */
 public class BankController {
 
+  // Instance variables
+  private final MenuView menuView;
+  private final CustomerService customerService;
+
+  // Constructor
+  public BankController(MenuView menuView, CustomerService customerService) {
+    this.menuView = menuView;
+    this.customerService = customerService;
+  }
+
+  // Methods
   public void run() {
 
     int userSelection = -1;
@@ -34,7 +44,7 @@ public class BankController {
       // Call MenuView to display the menu and get input
 
       try {
-        userSelection = MenuView.INSTANCE.menu(MenuDefinitions.mainMenu);
+        userSelection = menuView.menu(MenuDefinitions.mainMenu);
       } catch (NoSuchElementException ex) {
 
       }
@@ -50,15 +60,15 @@ public class BankController {
           break;
 
         case 2: // Log in as customer
-          MenuView.INSTANCE.displayError("Operation currently unsupported.");
+          menuView.displayError("Operation currently unsupported.");
           break;
 
         case 3: // Register as new customer
-          MenuView.INSTANCE.displayError("Operation currently unsupported.");
+          menuView.displayError("Operation currently unsupported.");
           break;
 
         default:
-          MenuView.INSTANCE.displayError("Unsupported menu operation.");
+          menuView.displayError("Unsupported menu operation.");
       }
 
       // Update application state based on the selection
@@ -71,15 +81,14 @@ public class BankController {
   private void auditorMode() {
 
     int userSelection = -1;
-    BigInteger userSelectedId;
 
     // Main program loop
     while (true) {
 
       try {
-        userSelection = MenuView.INSTANCE.menu(MenuDefinitions.auditorMenu);
+        userSelection = menuView.menu(MenuDefinitions.auditorMenu);
       } catch (NoSuchElementException ex) {
-
+        menuView.displayError(ex.getMessage());
       }
 
       if (userSelection == MenuDefinitions.auditorMenu.option().length) {
@@ -88,31 +97,66 @@ public class BankController {
 
       switch (userSelection) {
 
-        case 1: // View single customer
-          userSelectedId = BigInteger
-              .valueOf((long) MenuView.INSTANCE.userSelectedInt("Select customer id", "Select a valid integer.")); 
-          {
-            Optional<Customer> customer = CustomerDAO.INSTANCE.get(userSelectedId);
-            if (customer.isEmpty()) {
-              System.out.println("User not found.");
-            } else {
-              System.out.println(customer.get().toString());
-            }
-          }
-          break;
+        case 1 -> { // View single customer
 
-        case 2: // View customer list
-          CustomerDAO.INSTANCE.getAll()
-              .forEach(
-                  customer -> MenuView.INSTANCE.displayMessage(customer.toString()));
-          break;
+          // Read ID from user input
+          BigInteger userSelectedId;
+          try {
+            userSelectedId = new BigInteger(menuView.userSelectedStringAny("Insert customer ID"));
+          } catch (NumberFormatException ex) {
+            menuView.displayError(ex.getMessage());
+            continue;
+          }
+
+          // Search for the corresponding customer, if there is one
+          Optional<Customer> customer;
+          try {
+            customer = customerService.viewSingleCustomer(userSelectedId);
+          } catch (Exception ex) {
+            menuView.displayError(ex.getMessage());
+            continue;
+          }
+
+          // Display information
+          if (customer.isEmpty()) {
+            menuView.displayMessage("User not found.");
+          } else {
+            menuView.displayMessage(customer.get().toString());
+          }
+        }
+
+        case 2 -> { // View customer list
+
+          try {
+            customerService.getFullCustomerList()
+                .forEach(customer -> menuView.displayMessage(customer.toString()));
+          } catch (Exception ex) {
+            menuView.displayError(ex.getMessage());
+          }
+
+        }
+
+        case 3 -> { // Add customer
+          String firstName = menuView.userSelectedStringAny("Enter first name");
+          String lastName = menuView.userSelectedStringAny("Enter last name");
+          int age = menuView.userSelectedInt("Enter age", "Enter an integer");
+          try {
+            this.customerService.createNewCustomer(firstName, lastName, age);
+          } catch (Exception ex) {
+            menuView.displayError(ex.getMessage());
+          }
+        }
+
+        default -> {
+          menuView.displayError("Error in menu selection.");
+        }
       }
     }
   }
 }
 
 /**
- * Utility class. Holds menu definitions for @see BankController.
+ * Utility class. Holds menu definitions for {@link BankController}.
  */
 final class MenuDefinitions {
 
@@ -139,6 +183,7 @@ final class MenuDefinitions {
       new String[] {
           "View single customer",
           "View customer list",
+          "Add customer",
           "Exit"
       },
       "Selection",
