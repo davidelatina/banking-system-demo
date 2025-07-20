@@ -11,11 +11,11 @@ import java.util.Optional;
 
 import java.math.BigInteger;
 
-import com.davidelatina.bankingdemo.model.Customer;
-import com.davidelatina.bankingdemo.util.ConnectionManager;
+import com.davidelatina.bankingdemo.dao.util.ConnectionManager;
+import com.davidelatina.bankingdemo.model.entity.Customer;
 
 /**
- * @brief Data-access object for @see Customer
+ * Data-access object for @see Customer
  */
 public enum CustomerDAO {
 
@@ -25,8 +25,7 @@ public enum CustomerDAO {
    * Obtain a single customer from its id, if it exists.
    * 
    * @param id unique identifier for the user
-   * @return @see Optional of @see Customer. Empty if user was not found.
-   * @throws SQLException
+   * @return {@link Optional} of {@link Customer}. Empty if user was not found.
    */
   public Optional<Customer> get(BigInteger id) {
 
@@ -37,7 +36,7 @@ public enum CustomerDAO {
 
     String sql = "SELECT * FROM customer WHERE id = " + id;
     
-    Connection conn = ConnectionManager.getDbConnection();
+    Connection conn = ConnectionManager.INSTANCE.getDbConnection();
 
     try (
         Statement stmt = conn.createStatement();
@@ -77,7 +76,7 @@ public enum CustomerDAO {
     String sql = "SELECT * FROM customer";
     ArrayList<Customer> customerList = new ArrayList<>();
 
-    Connection conn = ConnectionManager.getDbConnection();
+    Connection conn = ConnectionManager.INSTANCE.getDbConnection();
 
     try (
         Statement stmt = conn.createStatement();
@@ -99,4 +98,13 @@ public enum CustomerDAO {
 
     return customerList;
   }
+
+  public void save(Customer customer) {
+
+  }
+
+  public void update(Customer user, String[] params) {
+
+  }
+
 }
