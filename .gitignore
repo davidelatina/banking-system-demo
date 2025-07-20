@@ -8,6 +8,9 @@ target/
 # Local configuration file(s)
 .env
 
+# Javadoc files
+api/
+
 # Compiled class file
 *.class
 

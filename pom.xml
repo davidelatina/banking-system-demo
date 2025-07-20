@@ -61,6 +61,27 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <!-- Javadoc plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.6.3</version> <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <reportOutputDirectory>${project.build.directory}/javadoc</reportOutputDirectory>
+                    <destDir>api</destDir> <doctitle>${project.name} API Documentation ${project.version}</doctitle>
+                    <windowtitle>${project.name} API Documentation ${project.version}</windowtitle>
+                    <nohelp>true</nohelp> <notimestamp>true</notimestamp> </configuration>
+            </plugin>
+
+
         </plugins>
     </build>
 </project>
