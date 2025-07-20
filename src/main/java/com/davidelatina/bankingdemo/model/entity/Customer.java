@@ -1,4 +1,4 @@
-package com.davidelatina.bankingdemo.model;
+package com.davidelatina.bankingdemo.model.entity;
 
 import java.math.BigInteger;
 import java.time.LocalDateTime;
