@@ -14,11 +14,31 @@ Demo banking system implemented in Java using JDBC for database access and MySQL
 ```
 banking-system-demo/
 ├── src/
-│ ├── main/java/com/davidelatina/bankingdemo/
-│ │ ├── dao/
-│ │ ├── main/
-│ │ ├── model/
-│ │ └── util/
+│ └── main/java/com/davidelatina/bankingdemo/
+│     ├── controller/        // Controller for managing application flow and state       
+│     │   └── BankController.java
+│     ├── model/             // Application model (business logic, entities, services)
+│     │   ├── entity/        // Core business entities
+│     │   │   └── Customer.java
+│     │   │   └── Account.java
+│     │   ├── service/       // Business logic
+│     │   │   └── CustomerService.java
+│     │   │   └── AccountService.java
+│     │   └── util/          // General utilities
+│     │       └── SomeCalculator.java
+│     ├── dao/               // Data Access Objects (interacting with database)
+│     │   ├── util/          // Database connection manager
+│     │   │   └── ConnectionManager.java
+│     │   ├── CustomerDAO.java
+│     │   └── AccountDAO.java
+│     ├── view/              // All View-related components
+│     │   ├── dto/           // Menu record as Data Transfer Object
+│     │   │   └── Menu.java  
+│     │   └── impl/          // View implementation
+│     │       └── MenuView.java
+│     └── main/              // Application entry point 
+│         └── Main.java/     
+│      
 ├── .env
 ├── banking_db_data.sql
 ├── banking_db_init.sql
