@@ -6,11 +6,13 @@ USE banking_db;
 
 -- customers
 CREATE TABLE customer (
-    -- SERIAL is an alias for BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE
     id SERIAL PRIMARY KEY,
+    username VARCHAR(255) NOT NULL UNIQUE,
     first_name VARCHAR(255) NOT NULL,
     last_name VARCHAR(255) NOT NULL,
     age INT UNSIGNED NOT NULL,
+    salt VARBINARY(16) NOT NULL, -- Salt for password hashing 
+    hashed_password VARBINARY(64) NOT NULL, -- SHA512 hash
     registered_at DATETIME NOT NULL
 );
 

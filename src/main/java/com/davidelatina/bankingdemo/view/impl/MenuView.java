@@ -16,7 +16,6 @@ public enum MenuView {
   // Reset text
   private static final String RESET = "\033[0m";
   // Colors
-  private static final String BLACK = "\033[0;30m";
   private static final String RED = "\033[0;31m";
 
   // Scanners
@@ -37,7 +36,7 @@ public enum MenuView {
    * @return int userSelection
    * @throws RuntimeException for Scanner exceptions
    */
-  public int menu(Menu menu) throws RuntimeException {
+  public int menu(Menu menu) throws NoSuchElementException {
 
     // Size of menu options array
     int size = menu.option().length;

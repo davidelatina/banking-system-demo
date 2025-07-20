@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import com.davidelatina.bankingdemo.model.entity.Customer;
 import com.davidelatina.bankingdemo.model.service.CustomerService;
+import com.davidelatina.bankingdemo.model.service.SessionManager;
 import com.davidelatina.bankingdemo.view.dto.Menu;
 import com.davidelatina.bankingdemo.view.impl.MenuView;
 
@@ -25,7 +26,7 @@ public class BankController {
   private final CustomerService customerService;
 
   // Constructor
-  public BankController(MenuView menuView, CustomerService customerService) {
+  public BankController(MenuView menuView, SessionManager sessionManager, CustomerService customerService) {
     this.menuView = menuView;
     this.customerService = customerService;
   }
@@ -37,16 +38,11 @@ public class BankController {
 
     while (true) { // Main application loop. Exit on user input in main menu
 
-      // Determine current application state
-
-      // Decide which menu to present
-
-      // Call MenuView to display the menu and get input
-
       try {
         userSelection = menuView.menu(MenuDefinitions.mainMenu);
       } catch (NoSuchElementException ex) {
-
+        menuView.displayError(ex.getMessage());
+        continue;
       }
 
       if (userSelection == MenuDefinitions.mainMenu.option().length) {
@@ -70,12 +66,7 @@ public class BankController {
         default:
           menuView.displayError("Unsupported menu operation.");
       }
-
-      // Update application state based on the selection
-
-      // Break the loop if an "Exit" option is chosen.
     }
-
   }
 
   private void auditorMode() {
@@ -137,13 +128,38 @@ public class BankController {
         }
 
         case 3 -> { // Add customer
+
+          String username = menuView.userSelectedStringAny("Enter username");
+
+          String password;
+          int attempts = 3;
+          do {
+            password = menuView.userSelectedStringAny("Enter password");
+            if (menuView.userSelectedStringAny("Repeat password").equals(password)) {
+              break;
+            }
+            menuView.displayMessage("Passwords do not match");
+            attempts--;
+          } while (attempts > 0);
+          if (attempts == 0) {
+            // Clear password
+            password = null;
+            System.gc();
+            menuView.displayError("Too many attempts.");
+            continue;
+          }
+
           String firstName = menuView.userSelectedStringAny("Enter first name");
           String lastName = menuView.userSelectedStringAny("Enter last name");
           int age = menuView.userSelectedInt("Enter age", "Enter an integer");
+
           try {
-            this.customerService.createNewCustomer(firstName, lastName, age);
+            this.customerService.createNewCustomer(username, password.toCharArray(), firstName, lastName, age);
           } catch (Exception ex) {
             menuView.displayError(ex.getMessage());
+          } finally {
+            password = null;
+            System.gc();
           }
         }
 

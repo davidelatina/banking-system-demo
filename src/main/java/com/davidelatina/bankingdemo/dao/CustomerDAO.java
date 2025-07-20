@@ -26,17 +26,23 @@ public enum CustomerDAO {
   /**
    * Register a new customer to the database.
    */
-  public void createCustomer(String firstName, String lastName, int age) throws SQLException {
+  public void createCustomer(
+      String username, String firstName, String lastName, int age, byte[] salt, byte[] hashedPassword)
+      throws SQLException {
 
-    String sql = "INSERT INTO customer (first_name, last_name, age, registered_at)  VALUES (?, ?, ?, NOW());";
+    String sql = "INSERT INTO customer (username, first_name, last_name, age, salt, hashed_password, registered_at)  VALUES (?, ?, ?, ?, ?, ?, NOW());";
 
     Connection conn = ConnectionManager.INSTANCE.getDbConnection();
 
     try (PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-      stmt.setString(1, firstName);
-      stmt.setString(2, lastName);
-      stmt.setInt(3, age);
+      stmt.setString(1, username);
+      stmt.setString(2, firstName);
+      stmt.setString(3, lastName);
+      stmt.setInt(4, age);
+      stmt.setBytes(5, salt);
+      stmt.setBytes(6, hashedPassword);
+
       stmt.executeUpdate();
       MenuView.INSTANCE.displayMessage("User added to database.");
 
@@ -53,7 +59,7 @@ public enum CustomerDAO {
    */
   public Optional<Customer> get(BigInteger id) throws SQLException {
 
-    String query = "SELECT * FROM customer WHERE id = " + id;
+    String query = "SELECT id, username, first_name, last_name, age, registered_at FROM customer WHERE id = " + id;
 
     Connection conn = ConnectionManager.INSTANCE.getDbConnection();
 
@@ -73,6 +79,7 @@ public enum CustomerDAO {
       // https://dev.mysql.com/doc/connector-j/en/connector-j-reference-type-conversions.html
       return Optional.of(new Customer(
           rs.getObject("id", BigInteger.class), // BIGINT UNSIGNED (SERIAL)
+          rs.getString("username"),
           rs.getString("first_name"),
           rs.getString("last_name"),
           rs.getInt("age"),
@@ -85,18 +92,19 @@ public enum CustomerDAO {
   }
 
   public ArrayList<Customer> getAll() throws SQLException {
-    String sql = "SELECT * FROM customer";
+    String query = "SELECT id, username, first_name, last_name, age, registered_at FROM customer";
     ArrayList<Customer> customerList = new ArrayList<>();
 
     Connection conn = ConnectionManager.INSTANCE.getDbConnection();
 
     try (
         Statement stmt = conn.createStatement();
-        ResultSet rs = stmt.executeQuery(sql)) {
+        ResultSet rs = stmt.executeQuery(query)) {
 
       while (rs.next()) {
         customerList.add(new Customer(
             rs.getObject("id", BigInteger.class), // BIGINT UNSIGNED (SERIAL)
+            rs.getString("username"),
             rs.getString("first_name"),
             rs.getString("last_name"),
             rs.getInt("age"),
