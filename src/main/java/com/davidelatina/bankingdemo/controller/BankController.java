@@ -1,6 +1,7 @@
 package com.davidelatina.bankingdemo.controller;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
@@ -13,7 +14,7 @@ import com.davidelatina.bankingdemo.view.impl.MenuView;
 /**
  * The {@code BankController} class acts as central orchestrator for the
  * application,
- * adhering to the Controller role in the Model-View-Controller (MVC)
+ * adhering to the Controller role in a Model-View-Controller (MVC)
  * design pattern.
  *
  * @see com.davidelatina.bankingdemo.view.impl.MenuView
@@ -131,20 +132,30 @@ public class BankController {
 
           String username = menuView.userSelectedStringAny("Enter username");
 
-          String password;
+          char[] password;
+          char[] repeated;
           int attempts = 3;
           do {
-            password = menuView.userSelectedStringAny("Enter password");
-            if (menuView.userSelectedStringAny("Repeat password").equals(password)) {
+            password = menuView.readPassword("Enter password");
+            repeated = menuView.readPassword("Repeat password");
+
+            boolean passwordsMatch = Arrays.equals(password, repeated);
+            
+            // Destroy repeated password
+            Arrays.fill(repeated, '\u0000');
+
+            // Exit loop if passwords matched
+            if (passwordsMatch) {
               break;
             }
+
+            // Otherwise, deleted first password as well and inform the user
+            Arrays.fill(password, '\u0000');
             menuView.displayMessage("Passwords do not match");
             attempts--;
           } while (attempts > 0);
-          if (attempts == 0) {
-            // Clear password
-            password = null;
-            System.gc();
+
+          if (attempts <= 0) {
             menuView.displayError("Too many attempts.");
             continue;
           }
@@ -154,12 +165,11 @@ public class BankController {
           int age = menuView.userSelectedInt("Enter age", "Enter an integer");
 
           try {
-            this.customerService.createNewCustomer(username, password.toCharArray(), firstName, lastName, age);
+            this.customerService.createNewCustomer(username, password, firstName, lastName, age);
           } catch (Exception ex) {
-            menuView.displayError(ex.getMessage());
+            menuView.displayError(ex.getMessage()); 
           } finally {
-            password = null;
-            System.gc();
+            Arrays.fill(password, '\u0000');
           }
         }
 

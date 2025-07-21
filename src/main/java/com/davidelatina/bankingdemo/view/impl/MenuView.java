@@ -1,5 +1,6 @@
 package com.davidelatina.bankingdemo.view.impl;
 
+import java.io.Console;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 
@@ -148,12 +149,28 @@ public enum MenuView {
   }
 
   public int userSelectedInt(String prompt, String errMessage) {
-    return this.menuIntAny(new Menu("", new String[]{}, prompt, errMessage));
+    return this.menuIntAny(new Menu("", new String[] {}, prompt, errMessage));
   }
 
   public String userSelectedStringAny(String prompt) {
     System.out.print(prompt + ": ");
     return scanStr.nextLine();
+  }
+
+  public char[] readPassword(String prompt) throws RuntimeException {
+
+    Console console = System.console();
+    if (console == null) {
+      throw new RuntimeException("Could not retrieve console instance.");
+    }
+
+    char[] password = console.readPassword(prompt + ": ");
+    for (int i = 0; i < password.length; i++) {
+      System.out.print("*");
+    }
+    System.out.println("");
+    
+    return password;
   }
 
   public void displayMessage(String message) {

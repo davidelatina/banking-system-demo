@@ -1,9 +1,12 @@
 package com.davidelatina.bankingdemo.model.service;
 
 import java.math.BigInteger;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.security.spec.InvalidKeySpecException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Optional;
 
 import javax.crypto.SecretKey;
@@ -14,6 +17,12 @@ import com.davidelatina.bankingdemo.dao.CustomerDAO;
 import com.davidelatina.bankingdemo.model.entity.Customer;
 
 public class CustomerService {
+  // Static variables
+  // --- Hashing
+  private final int saltWidth = 16;
+  private final int iterationCount = 1000; // for generating PBEKey
+  private final int keyLengthBits = 512; // for SHA512 hashing
+  private final String algorithm = "PBKDF2WithHmacSHA512";
 
   // Instance variables
   private final CustomerDAO customerDAO;
@@ -27,9 +36,9 @@ public class CustomerService {
 
   // Methods
 
-  //public Customer authenticateUser(String username, String password) {
+  // public Customer authenticateUser(String username, String password) {
   //
-  //}
+  // }
 
   public ArrayList<Customer> getFullCustomerList() throws SQLException {
     try {
@@ -38,7 +47,6 @@ public class CustomerService {
       throw ex;
     }
   }
-
 
   public Optional<Customer> viewSingleCustomer(BigInteger id) throws RuntimeException, SQLException {
 
@@ -54,13 +62,12 @@ public class CustomerService {
     }
   }
 
-  public void createNewCustomer(String username, char[] password, String firstName, String lastName, int age) throws RuntimeException, SQLException {
+  public void createNewCustomer(String username, char[] password, String firstName, String lastName, int age)
+      throws RuntimeException, SQLException {
 
     // Check if username is available
 
-
     // Check if password satisfies requirements
-
 
     // ID will be null when creating a new user: the DBMS will handle
     // auto-incremented IDs.
@@ -85,35 +92,20 @@ public class CustomerService {
     // datetime will be null when creating a new user: the DBMS will register the
     // exact time it registered the new user.
 
-
     // Generate salt
-    byte[] salt = new byte[16];
+    byte[] salt = new byte[saltWidth];
 
     secureRandom.nextBytes(salt);
 
-    // --- Hashing
-    int iterationCount = 1000;
-    int keyLengthBits = 512;
-    // Instantiate PBEKeySpec
-    PBEKeySpec spec = new PBEKeySpec(password, salt, iterationCount, keyLengthBits);
-
-    // Obtain a SecretKeyFactory instance
-    SecretKeyFactory skf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA512");
-
-    // Derive key
-    SecretKey key = skf.generateSecret(spec);
-
-    // Extract hashed password bytes
-    byte[] hashedPassword = key.getEncoded();
-
-    // Clear password
-    for (int i = 0; i < password.length; i++) {
-      password[i] = 0;
+    // Hash password
+    byte[] hashedPassword;
+    try {
+      hashedPassword = hashPassword(salt, password);
+    } catch (RuntimeException ex) {
+      throw ex;
     }
-    
 
-
-    // Registering user in database
+    // Register user in database
     try {
       this.customerDAO.createCustomer(username, firstName, lastName, age, salt, hashedPassword);
     } catch (SQLException ex) {
@@ -121,4 +113,37 @@ public class CustomerService {
     }
 
   }
+
+  private byte[] hashPassword(byte[] salt, char[] password) throws RuntimeException {
+
+    // Instantiate PBEKeySpec. (will clone password and salt)
+    PBEKeySpec spec = new PBEKeySpec(password, salt, iterationCount, keyLengthBits);
+
+    // Clear password
+    Arrays.fill(password, '\u0000');
+
+    // Obtain a SecretKeyFactory instance
+    SecretKeyFactory skf;
+    try {
+      skf = SecretKeyFactory.getInstance(algorithm);
+
+    } catch (NoSuchAlgorithmException ex) {
+      throw new RuntimeException("Hashing error: unknown algorithm", ex);
+    }
+
+    // Derive key
+    SecretKey key;
+    try {
+      key = skf.generateSecret(spec);
+
+    } catch (InvalidKeySpecException ex) {
+      throw new RuntimeException("Hashing error: invalid keyspec", ex);
+    }
+
+    // Extract hashed password bytes
+    byte[] hashedPassword = key.getEncoded();
+
+    return hashedPassword;
+  }
+
 }
