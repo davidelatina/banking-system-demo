@@ -1,6 +1,7 @@
 package com.davidelatina.bankingdemo.controller;
 
 import java.math.BigInteger;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -24,11 +25,13 @@ public class BankController {
 
   // Instance variables
   private final MenuView menuView;
+  private final SessionManager sessionManager;
   private final CustomerService customerService;
 
   // Constructor
   public BankController(MenuView menuView, SessionManager sessionManager, CustomerService customerService) {
     this.menuView = menuView;
+    this.sessionManager = sessionManager;
     this.customerService = customerService;
   }
 
@@ -43,7 +46,7 @@ public class BankController {
         userSelection = menuView.menu(MenuDefinitions.mainMenu);
       } catch (NoSuchElementException ex) {
         menuView.displayError(ex.getMessage());
-        continue;
+        System.exit(1);
       }
 
       if (userSelection == MenuDefinitions.mainMenu.option().length) {
@@ -52,22 +55,40 @@ public class BankController {
 
       // Process user selection
       switch (userSelection) {
-        case 1: // Auditor mode
+        case 1 -> { // Auditor mode
           auditorMode();
-          break;
+        }
 
-        case 2: // Log in as customer
-          menuView.displayError("Operation currently unsupported.");
-          break;
+        case 2 -> { // Log in as customer
+          try {
+            if (loginUser()) {
+              userMenu();
+            }
+          } catch (Exception ex) {
+            menuView.displayError(ex.getMessage());
+          }
+        }
 
-        case 3: // Register as new customer
-          menuView.displayError("Operation currently unsupported.");
-          break;
+        case 3 -> { // Register as new customer
+          try {
+            registerUser();
+          } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(1);
+          }
+          
+        }
 
-        default:
+        default -> {
           menuView.displayError("Unsupported menu operation.");
+        }
       }
     }
+  }
+
+  private void userMenu() {
+    // TODO Auto-generated method stub
+    throw new UnsupportedOperationException("Unimplemented method 'userMenu'");
   }
 
   private void auditorMode() {
@@ -81,6 +102,7 @@ public class BankController {
         userSelection = menuView.menu(MenuDefinitions.auditorMenu);
       } catch (NoSuchElementException ex) {
         menuView.displayError(ex.getMessage());
+        userSelection = MenuDefinitions.auditorMenu.option().length;
       }
 
       if (userSelection == MenuDefinitions.auditorMenu.option().length) {
@@ -89,87 +111,16 @@ public class BankController {
 
       switch (userSelection) {
 
-        case 1 -> { // View single customer
-
-          // Read ID from user input
-          BigInteger userSelectedId;
-          try {
-            userSelectedId = new BigInteger(menuView.userSelectedStringAny("Insert customer ID"));
-          } catch (NumberFormatException ex) {
-            menuView.displayError(ex.getMessage());
-            continue;
-          }
-
-          // Search for the corresponding customer, if there is one
-          Optional<Customer> customer;
-          try {
-            customer = customerService.viewSingleCustomer(userSelectedId);
-          } catch (Exception ex) {
-            menuView.displayError(ex.getMessage());
-            continue;
-          }
-
-          // Display information
-          if (customer.isEmpty()) {
-            menuView.displayMessage("User not found.");
-          } else {
-            menuView.displayMessage(customer.get().toString());
-          }
+        case 1 -> {
+          viewSingleCustomer();
         }
 
         case 2 -> { // View customer list
-
           try {
             customerService.getFullCustomerList()
                 .forEach(customer -> menuView.displayMessage(customer.toString()));
           } catch (Exception ex) {
             menuView.displayError(ex.getMessage());
-          }
-
-        }
-
-        case 3 -> { // Add customer
-
-          String username = menuView.userSelectedStringAny("Enter username");
-
-          char[] password;
-          char[] repeated;
-          int attempts = 3;
-          do {
-            password = menuView.readPassword("Enter password");
-            repeated = menuView.readPassword("Repeat password");
-
-            boolean passwordsMatch = Arrays.equals(password, repeated);
-            
-            // Destroy repeated password
-            Arrays.fill(repeated, '\u0000');
-
-            // Exit loop if passwords matched
-            if (passwordsMatch) {
-              break;
-            }
-
-            // Otherwise, deleted first password as well and inform the user
-            Arrays.fill(password, '\u0000');
-            menuView.displayMessage("Passwords do not match");
-            attempts--;
-          } while (attempts > 0);
-
-          if (attempts <= 0) {
-            menuView.displayError("Too many attempts.");
-            continue;
-          }
-
-          String firstName = menuView.userSelectedStringAny("Enter first name");
-          String lastName = menuView.userSelectedStringAny("Enter last name");
-          int age = menuView.userSelectedInt("Enter age", "Enter an integer");
-
-          try {
-            this.customerService.createNewCustomer(username, password, firstName, lastName, age);
-          } catch (Exception ex) {
-            menuView.displayError(ex.getMessage()); 
-          } finally {
-            Arrays.fill(password, '\u0000');
           }
         }
 
@@ -179,6 +130,120 @@ public class BankController {
       }
     }
   }
+
+
+
+
+  // --- Subroutines
+
+  private void viewSingleCustomer() {
+    // View single customer
+
+    // Read ID from user input
+    BigInteger userSelectedId;
+    try {
+      userSelectedId = new BigInteger(menuView.userSelectedStringAny("Insert customer ID"));
+    } catch (NumberFormatException ex) {
+      menuView.displayError(ex.getMessage());
+      return;
+    }
+
+    // Search for the corresponding customer, if there is one
+    Optional<Customer> customer;
+    try {
+      customer = customerService.viewSingleCustomer(userSelectedId);
+    } catch (Exception ex) {
+      menuView.displayError(ex.getMessage());
+      return;
+    }
+
+    // Display information
+    if (customer.isEmpty()) {
+      menuView.displayMessage("User not found.");
+    } else {
+      menuView.displayMessage(customer.get().toString());
+    }
+  }
+
+  private boolean loginUser() throws SQLException {
+
+    String username;
+    char[] password;
+
+    int attempts = 3;
+    do {
+      username = menuView.userSelectedStringAny("Enter username");
+      password = menuView.readPassword("Enter password");
+
+      // Check if customer by this username is registered
+      if (customerService.checkUsernameInUse(username)) {
+
+        // Attempt to log in
+        if (sessionManager.login(username, password)) {
+          menuView.displayMessage("Welcome back, " +
+              sessionManager.getActiveUser().firstName());
+          return true;
+        }
+      }
+
+      // Delete first password and prompt the user again
+      Arrays.fill(password, '\u0000');
+      menuView.displayMessage("Username and Password do not match.");
+      attempts--;
+    } while (attempts > 0);
+
+    menuView.displayError("Too many attempts.");
+    return false;
+  }
+
+  private void registerUser() {
+
+    String username = menuView.userSelectedStringAny("Enter username");
+
+    char[] password;
+    char[] repeated;
+    int attempts = 3;
+    do {
+      password = menuView.readPassword("Enter password");
+      repeated = menuView.readPassword("Repeat password");
+
+      boolean passwordsMatch = Arrays.equals(password, repeated);
+
+      // Destroy repeated password
+      Arrays.fill(repeated, '\u0000');
+
+      // Exit loop if passwords matched
+      if (passwordsMatch) {
+        break;
+      }
+
+      // Otherwise, delete first password as well and inform the user
+      Arrays.fill(password, '\u0000');
+      menuView.displayMessage("Passwords do not match");
+      attempts--;
+    } while (attempts > 0);
+
+    if (attempts <= 0) {
+      menuView.displayError("Too many attempts.");
+      return;
+    }
+
+    menuView.displayMessage("Passwords match");
+
+    String firstName = menuView.userSelectedStringAny("Enter first name");
+    String lastName = menuView.userSelectedStringAny("Enter last name");
+    int age = menuView.userSelectedInt("Enter age", "Enter an integer");
+
+    try {
+      this.customerService.createNewCustomer(username, password, firstName, lastName, age);
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      menuView.displayError(ex.getMessage());
+    } finally {
+      Arrays.fill(password, '\u0000');
+    }
+  }
+
 }
 
 /**
@@ -209,7 +274,6 @@ final class MenuDefinitions {
       new String[] {
           "View single customer",
           "View customer list",
-          "Add customer",
           "Exit"
       },
       "Selection",

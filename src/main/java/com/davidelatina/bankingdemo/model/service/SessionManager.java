@@ -1,5 +1,7 @@
 package com.davidelatina.bankingdemo.model.service;
 
+import java.sql.SQLException;
+
 import com.davidelatina.bankingdemo.model.entity.Customer;
 
 /**
@@ -52,15 +54,15 @@ public enum SessionManager {
   }
 
 
-  public void login(String username, String password) {
-    try {
-      // CustomerService.authenticateUser(username, password);
-    } catch (Exception e) {
-      // TODO: handle exception
+  public boolean login(String username, char[] password) throws IllegalArgumentException, SQLException {
+    if (customerService.authenticateUser(username, password)) {
+      activeUser = customerService.getCustomer(username);
+      return true;
     }
+    return false;
   }
 
-  public void logout(Customer customer) {
+  public void logout() {
     activeUser = null;
   }
 

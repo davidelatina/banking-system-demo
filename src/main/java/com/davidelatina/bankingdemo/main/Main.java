@@ -5,6 +5,7 @@ import java.security.SecureRandom;
 
 import com.davidelatina.bankingdemo.controller.BankController;
 import com.davidelatina.bankingdemo.dao.CustomerDAO;
+import com.davidelatina.bankingdemo.dao.util.ConnectionManager;
 import com.davidelatina.bankingdemo.model.service.CustomerService;
 import com.davidelatina.bankingdemo.model.service.SessionManager;
 import com.davidelatina.bankingdemo.view.impl.MenuView;
@@ -12,11 +13,14 @@ import com.davidelatina.bankingdemo.view.impl.MenuView;
 public class Main {
   public static void main(String[] args) {
 
+    // Initialize CustomerDAO
+    CustomerDAO customerDAO = new CustomerDAO(ConnectionManager.INSTANCE);
+
     // Initialize customer service
     CustomerService customerService;
     try {
       customerService = new CustomerService(
-          CustomerDAO.INSTANCE, 
+          customerDAO, 
           SecureRandom.getInstanceStrong()); // Throws NoSuchAlgorithmException
     } catch (NoSuchAlgorithmException e) {
       MenuView.INSTANCE.displayError("No algorithm for secure random number generation is available on this platform. Exiting application...");
